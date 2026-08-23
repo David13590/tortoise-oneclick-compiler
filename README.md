@@ -45,7 +45,7 @@ Put the extracted folders(dbc, maps, vmaps and mmaps) directly into server folde
 
 ### 4. Edit configs(important)
 
-By default, configs will feature dev settings, which may cause lag and instability and will actually crash mangosd. I have included recommended conf files for both mangosd and aiplayerbot, you can compare them and tweak how you like it, but it's recommended to do before first launch!
+By default, configs will feature dev settings, which may cause lag and instability and will actually crash mangosd. I have included recommended conf files for both mangosd and aiplayerbot, you can compare them, tweak how you like it and replace default ones, but it's recommended to do before first launch!
 
 You will need to manually create folders data, logs, honor and pdump or replace lines 12, 16, 20, 24 in mangosd.conf to be equal "." to avoid crashing mangosd
 
