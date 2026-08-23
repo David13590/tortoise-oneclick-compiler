@@ -1,0 +1,128 @@
+========================================================================
+ TORTOISE-WOW - MANUAL PREREQUISITE INSTALL GUIDE
+========================================================================
+
+compile-tortoise-wow.ps1 tries to install everything below AUTOMATICALLY
+using winget (Windows' built-in package manager). You should only need
+this guide if:
+
+  - winget isn't available on your machine (rare - only very stripped-
+    down Windows installs lack it), or
+  - the automatic install failed for some reason and you want to do it
+    by hand instead, or
+  - you just want to understand what's being installed and why.
+
+You do NOT need MariaDB/MySQL from here - the script downloads a portable
+copy of that itself, no separate install needed.
+
+Everything below is a genuine, permanent, system-wide install. These are
+development tools, not project data, so there's no "portable" version of
+a C++ compiler toolchain to speak of.
+
+------------------------------------------------------------------------
+ 1. GIT
+------------------------------------------------------------------------
+What it's for: downloading (cloning) the tortoise-wow source code and
+the vcpkg package manager.
+
+Download:  https://git-scm.com/download/win
+
+Install steps:
+  1. Run the downloaded installer.
+  2. Click through the default options - they're fine for this purpose.
+     The one setting worth checking: on the "Adjusting your PATH
+     environment" screen, make sure "Git from the command line and also
+     from 3rd-party software" is selected (it's the default).
+  3. Finish the install.
+
+Verify it worked: open a NEW Command Prompt window (must be new - old
+windows don't see the updated PATH) and run:
+  git --version
+You should see something like "git version 2.4x.x".
+
+------------------------------------------------------------------------
+ 2. CMAKE
+------------------------------------------------------------------------
+What it's for: generating the Visual Studio build files from the
+project's source, and driving the actual compile.
+
+Download:  https://cmake.org/download/
+(Grab the "Windows x64 Installer" .msi under the latest release.)
+
+Install steps:
+  1. Run the downloaded .msi installer.
+  2. IMPORTANT: on the install options screen, choose "Add CMake to the
+     system PATH for all users" (or "for current user" if you don't have
+     admin rights). This is the single most commonly missed step -
+     without it, nothing that needs cmake will be able to find it.
+  3. Finish the install (version 3.16 or newer is required; any current
+     download will be well past that).
+
+Verify it worked: open a NEW Command Prompt window and run:
+  cmake --version
+You should see something like "cmake version 3.3x.x".
+
+------------------------------------------------------------------------
+ 3. VISUAL STUDIO (Build Tools or Community) - C++ WORKLOAD
+------------------------------------------------------------------------
+What it's for: the actual C++ compiler and linker that turns the source
+code into mangosd.exe / realmd.exe. This is the biggest download of the
+three (several GB).
+
+You have two options - either is fine, pick whichever you prefer:
+
+  OPTION A - Build Tools only (smaller, no IDE, command-line only)
+  Download: https://visualstudio.microsoft.com/downloads/
+  Scroll to "Tools for Visual Studio" -> "Build Tools for Visual
+  Studio 2022" and download that.
+
+  OPTION B - Visual Studio Community (full IDE, larger download, useful
+  if you also want to browse/debug the code in an editor)
+  Download: https://visualstudio.microsoft.com/downloads/
+  The "Community 2022" download near the top of the page.
+
+Install steps (same for either option):
+  1. Run the downloaded installer (vs_BuildTools.exe or
+     vs_community.exe). It will first download the actual installer
+     components - this takes a few minutes.
+  2. On the workloads screen, check the box for:
+       "Desktop development with C++"
+     This is the ONLY workload you need for this project. You don't
+     need "Universal Windows Platform", "Game development with C++",
+     or any of the others unless you want them for something else.
+  3. Click Install and wait - this is the multi-GB part, expect it to
+     take a while depending on your connection.
+  4. A reboot is occasionally requested after install, especially on a
+     machine that had no Visual Studio components before. If prompted,
+     reboot before trying to build anything.
+
+Verify it worked: this one doesn't have a simple command-line check the
+way Git and CMake do. The real test is running the compile script -
+if it reports "Visual Studio C++ tools found" instead of failing, you're
+good. If you want to check manually first, open "Visual Studio
+Installer" from the Start menu, and confirm "Desktop development with
+C++" shows as installed under your VS2022 install.
+
+------------------------------------------------------------------------
+ AFTER ALL THREE ARE INSTALLED
+------------------------------------------------------------------------
+Just run compile-tortoise-wow.bat (next to this file) as normal - it
+will detect that Git/CMake/VS are already present and skip straight to
+setting up the portable database and building the server.
+
+------------------------------------------------------------------------
+ THINGS THAT COMMONLY GO WRONG
+------------------------------------------------------------------------
+"git/cmake is not recognized as an internal or external command"
+  -> You installed it but didn't open a NEW terminal window afterward.
+     PATH changes only apply to windows opened after the install.
+
+"CMake Error ... requires ACE installed"
+  -> Not a prerequisite issue - this is a separate library the main
+     script installs on its own via vcpkg. Nothing to do here.
+
+VS Build Tools installed but the script still says the C++ workload
+isn't found
+  -> Open "Visual Studio Installer", click "Modify" on the Build
+     Tools 2022 entry, and confirm "Desktop development with C++" is
+     actually checked (not just downloaded/installed as a shell).

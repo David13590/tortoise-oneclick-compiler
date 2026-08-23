@@ -1,0 +1,89 @@
+========================================================================
+ ACCOUNT/CHARACTER TRANSFER - PULL + APPLY GUIDE
+========================================================================
+
+Three scripts, put all of them in E:\TortoiseCompiled (same folder as
+compile-tortoise-wow.ps1) - they need the portable MariaDB client tools
+in .\DB\bin:
+
+  pull-docker.ps1      - dumps from your Docker build to .\transfer-dumps
+  pull-oldnative.ps1   - dumps from your earlier native build to the same folder
+  transfer-apply.ps1   - loads whatever's in .\transfer-dumps into the new server
+
+Pull scripts only ever talk to their OWN source - never to each other, and
+never to the new server. Apply only ever talks to the new server + the
+dump files already sitting on disk. Nothing needs to run at the same time
+as anything else, and you can pull now, apply later, whenever's convenient.
+
+------------------------------------------------------------------------
+ STEP 1 - pull-docker.ps1 (whenever the Docker stack is up)
+------------------------------------------------------------------------
+Make sure your Docker stack is up (docker compose up -d), check SrcPort
+at the top of the script matches whatever host port your
+docker-compose.override.yml actually exposes, then run pull-docker.bat.
+This writes docker_logon.sql and docker_char.sql to .\transfer-dumps.
+
+ADJUST YOUR ROOT PASSWORD in pull-docker.ps1
+
+------------------------------------------------------------------------
+ STEP 2 - pull-oldnative.ps1 (needs the port swap)
+------------------------------------------------------------------------
+The old native build's portable MariaDB and the new server's both use
+port 3307 by default - only one can be running at a time. Before running
+this script:
+  1. Stop the NEW server's database (close its console window, or run:
+     taskkill /IM mysqld.exe /F)
+  2. Start the OLD build's own database (its MySQL.bat-style launcher
+     under E:\Turtle1181bots\server)
+  3. Run pull-oldnative.bat
+  4. Once it finishes (writes oldnative_logon.sql / oldnative_char.sql),
+     you can stop the old database and start the new server's back up -
+     you're done needing the old build for the rest of this.
+
+Order doesn't matter - do this before or after Step 1, whichever's easier.
+
+------------------------------------------------------------------------
+ STEP 3 - transfer-apply.ps1 (once you have the dumps you want)
+------------------------------------------------------------------------
+Make sure the NEW server's database is running (.\DB\start-database.bat),
+then run transfer-apply.bat.
+
+It automatically skips any source whose dump files aren't in
+.\transfer-dumps yet - so if you only pulled Docker so far, it'll merge
+just that and print a note about oldnative being skipped. Run it again
+later after pulling the other source; already-merged data won't be
+duplicated (Docker/first-source rows use INSERT, which would only error
+on a true re-run collision - if you do need to re-apply the SAME source
+twice, see the note below).
+
+The two sources are set up with different Offset values in the script
+(docker = 0, meaning "import as-is"; oldnative = 5000000, meaning "shift
+every ID up so it can't collide with what's already there"). This is
+fixed regardless of which pull script you ran first - no need to track
+which one was technically "first."
+
+------------------------------------------------------------------------
+ AFTER APPLYING
+------------------------------------------------------------------------
+Start the new server normally (start-all.bat) and check:
+  - Both sets of accounts can log in with their original passwords
+  - Characters from both sources appear at character select
+  - Log into one character from each source, check bags/bank/mail
+
+Guilds, arena teams, and petitions were NOT transferred - recreate those
+by hand (create the guild fresh, re-invite the members).
+
+------------------------------------------------------------------------
+ RE-RUNNING / ADDING A THIRD SOURCE
+------------------------------------------------------------------------
+- Re-pulling a source just overwrites its two .sql files - fine to do
+  any time you want a fresher snapshot before applying.
+- Re-running transfer-apply.ps1 for the SAME source a second time will
+  hit "duplicate entry" on the primary-key inserts for anything already
+  merged (harmless - those rows are just skipped) as long as that
+  source's Offset didn't change between runs.
+- For a third source, write a new pull-<name>.ps1 by copying
+  pull-oldnative.ps1 and changing SrcHost/SrcPort/SrcUser/SrcPassword/
+  Label, then add a matching entry to transfer-apply.ps1's $Sources list
+  with a fresh Offset (10000000, so it can't collide with either
+  existing source).
