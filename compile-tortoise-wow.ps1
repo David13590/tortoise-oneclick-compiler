@@ -109,14 +109,35 @@ function Install-Winget($wingetId, $displayName, $overrideArgs = $null) {
     Ok "$displayName installed"
 }
 
-if (Get-Command git -ErrorAction SilentlyContinue) { Ok "Git already installed" }
-else { Install-Winget "Git.Git" "Git" }
+# winget does NOT reliably add a package to PATH - not for this session, and sometimes not
+# even persistently, regardless of the installer's own "add to PATH" option. Rather than trust
+# PATH at all, check (and if needed, add) each tool's known default install folder directly -
+# the same approach already used below for vswhere, which never relied on PATH either.
+function Test-OrAddToPath($exeName, $knownDirs) {
+    if (Get-Command $exeName -ErrorAction SilentlyContinue) { return $true }
+    foreach ($dir in $knownDirs) {
+        if (Test-Path "$dir\$exeName") {
+            $env:Path = "$env:Path;$dir"
+            return $true
+        }
+    }
+    return $false
+}
 
-if (Get-Command cmake -ErrorAction SilentlyContinue) { Ok "CMake already installed" }
-else { Install-Winget "Kitware.CMake" "CMake" }
+$gitDirs   = @("$env:ProgramFiles\Git\cmd", "$env:ProgramFiles\Git\bin")
+$cmakeDirs = @("$env:ProgramFiles\CMake\bin", "${env:ProgramFiles(x86)}\CMake\bin")
 
-# Refresh PATH in this session so newly-installed git/cmake are visible without a restart
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+if (Test-OrAddToPath "git.exe" $gitDirs) { Ok "Git already installed" }
+else {
+    Install-Winget "Git.Git" "Git"
+    if (-not (Test-OrAddToPath "git.exe" $gitDirs)) { Fail "Git installed via winget but still can't be found at its usual location ($($gitDirs -join ' or ')). It may have installed somewhere non-default - add its folder to PATH manually and re-run." }
+}
+
+if (Test-OrAddToPath "cmake.exe" $cmakeDirs) { Ok "CMake already installed" }
+else {
+    Install-Winget "Kitware.CMake" "CMake"
+    if (-not (Test-OrAddToPath "cmake.exe" $cmakeDirs)) { Fail "CMake installed via winget but still can't be found at its usual location ($($cmakeDirs -join ' or ')). It may have installed somewhere non-default - add its folder to PATH manually and re-run." }
+}
 
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 $vsPath = $null
