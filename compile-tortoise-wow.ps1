@@ -35,8 +35,8 @@
 # Everything below lives under the folder this script sits in.
 $RootDir         = $PSScriptRoot
 
-$RepoUrl         = "https://github.com/Shyalya/tortoise-wow.git"
-$Branch          = "playerbots-integration-gh"
+$RepoUrl         = "https://github.com/David13590/tortoise-wow.git"
+$Branch          = "bot-lfg-and-groupfinder-fix"
 $SourceDir       = "$RootDir\source"
 $VcpkgDir        = "$RootDir\vcpkg"
 $InstallPrefix   = "$RootDir\server"
