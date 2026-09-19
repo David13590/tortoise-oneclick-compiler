@@ -3,3 +3,4 @@ server/
 source/
 .pdb
 source/tools/checkegglogs/obj
+.vscode/
