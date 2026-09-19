@@ -44,7 +44,12 @@ $BuildPlayerbots = $true      # $false = a server with no bots at all
 $UseExtractors   = $true      # $false only if you already have dbc/maps/vmaps/mmaps
 
 $DbFolder        = "$RootDir\DB"   # portable MariaDB lives here, not installed as a service
-$DbPort          = 3307            # off the default 3306 so it never collides with a real install
+# 3308, NOT 3307: tortoise-server-runtime's portable MariaDB also defaults to 3307. If this
+# script ever shared that port, its "is a DB already listening on my port?" check (a plain
+# TCP probe, not an identity check) would see the RUNTIME's live mysqld and skip starting its
+# own - then run create_databases.sql (which DROPs and recreates every table) straight against
+# the runtime's real accounts/characters. Keeping the ports distinct makes that impossible.
+$DbPort          = 3308
 $DbRootPassword  = ""              # blank = no password (fine for localhost-only dev use)
 $MariaDbVersion  = "11.4.10"       # LTS branch, zip package
 
